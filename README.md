@@ -6,8 +6,6 @@
 
 A privacy-first summarization tool that generates dynamic bullet-point summaries from webpages and YouTube videos using local AI processing. No cloud dependencies, no data leaks!
 
-![Architecture Diagram](docs/architecture.png)
-
 ## Features ✨
 
 - **Dynamic Summarization Levels** (1-5) - From concise overviews to detailed breakdowns
@@ -116,7 +114,7 @@ print(response.json()["summary"])
 
 ## Development 👨💻
 
-### Tech Stack
+### Tech Stack & Architecture
 
 | Component          | Technology                  |
 |--------------------|-----------------------------|
@@ -126,6 +124,8 @@ print(response.json()["summary"])
 | YouTube Processing | youtube-transcript-api      |
 | Frontend           | React + Tailwind CSS        |
 | Browser Extension  | WebExtensions API           |
+
+![Architecture Diagram](docs/architecture.png)
 
 ### File Structure
 
