@@ -107,7 +107,7 @@ async def generate_summary(text: str, level: int) -> str:
                 "http://localhost:11434/api/generate",
                 json={
                     "model": "gemma3",
-                    "prompt": f"Create {3 + level} bullet points summarizing this:\n{text[:3000]}",
+                    "prompt": f"Create {3 + level} bullet points summarizing this, no header or footer:\n{text[:3000]}",
                     "stream": False,
                     "options": {"temperature": 0.3}
                 }
