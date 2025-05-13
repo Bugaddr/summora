@@ -73,15 +73,6 @@ response = requests.post(
 print(response.json()["summary"])
 ```
 
-### Browser Extension Setup
-
-1. Enable developer mode in Chrome/Firefox
-2. Load unpacked extension from `/extension` directory
-3. Click icon on any webpage/YouTube video
-4. Select detail level (1-5)
-
-![Browser Extension Demo](docs/extension-demo.gif)
-
 ## API Documentation 📚
 
 ### POST /summarize
