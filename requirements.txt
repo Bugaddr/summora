@@ -1,0 +1,8 @@
+fastapi>=0.68.0
+uvicorn>=0.15.0
+httpx>=0.23.0
+readability-lxml>=0.8.1
+beautifulsoup4>=4.9.3
+youtube-transcript-api>=0.4.1
+pydantic>=1.9.0
+python-multipart>=0.0.5

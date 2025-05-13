@@ -1,28 +1,53 @@
 import httpx
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, conint
 from readability import Document
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 from urllib.parse import unquote, urlparse
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class SummaryRequest(BaseModel):
     url: str
     level: conint(ge=1, le=5) = 3
 
 def validate_url(url: str) -> None:
-    """Validate URL format and scheme"""
+    """Validate URL format and scheme with enhanced parsing"""
     parsed = urlparse(url)
-    if not parsed.scheme or not parsed.netloc:
-        raise ValueError("Invalid URL format")
+    logger.info(f"Parsing URL: {url}")
+    logger.info(f"Scheme: {parsed.scheme}, Netloc: {parsed.netloc}")
+    
+    if not parsed.scheme:
+        raise ValueError("URL must include http:// or https://")
+    if not parsed.netloc:
+        raise ValueError("Invalid domain format")
     if parsed.scheme not in ("http", "https"):
-        raise ValueError("Unsupported URL scheme")
+        raise ValueError("Only HTTP/HTTPS URLs are supported")
 
 async def fetch_content(url: str) -> str:
     """Fetch and process content from URL"""
+    logger.info(f"Starting content fetch for: {url}")
     try:
         if "youtube.com" in url or "youtu.be" in url:
             return await get_youtube_transcript(url)
@@ -35,13 +60,17 @@ async def fetch_content(url: str) -> str:
             )
             response.raise_for_status()
             doc = Document(response.text)
-            return BeautifulSoup(doc.summary(), 'html.parser').get_text(separator='\n', strip=True)
+            content = BeautifulSoup(doc.summary(), 'html.parser').get_text(separator='\n', strip=True)
+            logger.info(f"Fetched {len(content)} characters from webpage")
+            return content
             
     except Exception as e:
-        raise RuntimeError(f"Content extraction failed: {str(e)}")
+        logger.error(f"Content extraction failed: {str(e)}")
+        raise RuntimeError(f"Could not process content: {str(e)}")
 
 async def get_youtube_transcript(url: str) -> str:
     """Get YouTube transcript with fallback languages"""
+    logger.info(f"Processing YouTube URL: {url}")
     try:
         video_id = url.split("v=")[-1].split("&")[0] if "v=" in url else url.split("/")[-1]
         languages = ['en', 'en-US', 'en-GB', 'en-IN']
@@ -49,22 +78,29 @@ async def get_youtube_transcript(url: str) -> str:
         for lang in languages:
             try:
                 transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[lang])
-                return " ".join(entry['text'] for entry in transcript)
+                content = " ".join(entry['text'] for entry in transcript)
+                logger.info(f"Found transcript in {lang}: {len(content)} characters")
+                return content
             except NoTranscriptFound:
                 continue
 
-        # If no transcripts found in fallback languages
         transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
         available_langs = [t.language_code for t in transcripts]
-        raise RuntimeError(f"No English transcript found. Available languages: {available_langs}")
+        error_msg = f"No English transcript found. Available languages: {available_langs}"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
         
     except TranscriptsDisabled:
-        raise RuntimeError("Subtitles are disabled for this video")
+        error_msg = "Subtitles disabled for this video"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
     except Exception as e:
-        raise RuntimeError(f"YouTube error: {str(e)}")
+        logger.error(f"YouTube error: {str(e)}")
+        raise RuntimeError(f"Could not process YouTube video: {str(e)}")
 
 async def generate_summary(text: str, level: int) -> str:
     """Generate summary using Ollama"""
+    logger.info(f"Generating summary (level {level}) for {len(text)} characters")
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
@@ -77,28 +113,47 @@ async def generate_summary(text: str, level: int) -> str:
                 }
             )
             response.raise_for_status()
-            return response.json().get("response", "")
+            result = response.json()
+            return result.get("response", "")
             
     except httpx.HTTPStatusError as e:
-        raise RuntimeError(f"Ollama API error: {e.response.text}")
+        error_msg = f"AI service error ({e.response.status_code}): {e.response.text}"
+        logger.error(error_msg)
+        raise RuntimeError("AI service unavailable")
     except Exception as e:
-        raise RuntimeError(f"Summarization failed: {str(e)}")
+        logger.error(f"Summarization failed: {str(e)}")
+        raise RuntimeError("Could not generate summary")
 
 @app.post("/summarize")
 async def summarize(request: SummaryRequest):
     try:
-        validate_url(request.url)
-        clean_url = unquote(request.url).rstrip('/')
+        # Decode and clean URL first
+        decoded_url = unquote(request.url)
+        logger.info(f"Received request for URL: {decoded_url}")
+        
+        validate_url(decoded_url)
+        clean_url = decoded_url.rstrip('/')
+        
         content = await fetch_content(clean_url)
         summary = await generate_summary(content, request.level)
         return {"summary": summary}
     
     except ValueError as e:
+        logger.warning(f"Validation error: {str(e)}")
         raise HTTPException(400, detail=str(e))
     except RuntimeError as e:
+        logger.error(f"Processing error: {str(e)}")
         raise HTTPException(422, detail=str(e))
     except Exception as e:
+        logger.critical(f"Unexpected error: {str(e)}")
         raise HTTPException(500, detail="Internal server error")
+
+# Serve static files
+app.mount("/web_ui", StaticFiles(directory="web_ui"), name="web_ui")
+
+@app.get("/")
+async def read_root():
+    return FileResponse("web_ui/index.html")
 
 if __name__ == "__main__":
     import uvicorn

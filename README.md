@@ -105,25 +105,25 @@ print(response.json()["summary"])
 
 **Error Responses:**
 
-| Code | Description                  |
-|------|------------------------------|
-| 400  | Invalid URL format           |
-| 422  | Content extraction failed    |
-| 429  | Rate limit exceeded          |
-| 500  | Internal server error        |
+| Code | Description               |
+| ---- | ------------------------- |
+| 400  | Invalid URL format        |
+| 422  | Content extraction failed |
+| 429  | Rate limit exceeded       |
+| 500  | Internal server error     |
 
 ## Development 👨💻
 
 ### Tech Stack & Architecture
 
-| Component          | Technology                  |
-|--------------------|-----------------------------|
-| Backend            | Python + FastAPI            |
-| AI Engine          | Ollama + Gemma-3B/Mistral   |
+| Component          | Technology                        |
+| ------------------ | --------------------------------- |
+| Backend            | Python + FastAPI                  |
+| AI Engine          | Ollama + Gemma-3B/Mistral         |
 | Web Scraping       | BeautifulSoup4 + readability-lxml |
-| YouTube Processing | youtube-transcript-api      |
-| Frontend           | React + Tailwind CSS        |
-| Browser Extension  | WebExtensions API           |
+| YouTube Processing | youtube-transcript-api            |
+| Frontend           | React + Tailwind CSS              |
+| Browser Extension  | WebExtensions API                 |
 
 ![Architecture Diagram](docs/architecture.png)
 
@@ -132,8 +132,7 @@ print(response.json()["summary"])
 ```text
 summora/
 ├── main.py            # FastAPI server
-├── extension/         # Browser extension code
-├── web-ui/            # React frontend
+├── web_ui/            # React frontend
 ├── requirements.txt
 └── docs/
     └── architecture.png
