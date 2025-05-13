@@ -25,7 +25,7 @@ A privacy-first summarization tool that generates dynamic bullet-point summaries
 
 ```bash
 # 1. Start Ollama service
-ollama serve
+OLLAMA_DEBUG=4 ollama serve
 
 # 2. Install AI model (choose one)
 ollama pull gemma3  # Lightweight option
