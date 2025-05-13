@@ -18,7 +18,7 @@ A privacy-first summarization tool that generates dynamic bullet-point summaries
 ### Prerequisites
 
 - Python 3.9+
-- [Ollama](https://ollama.ai) installed
+- [Ollama](https://ollama.ai) installed with CUDA
 - 8GB+ RAM recommended
 
 ```bash
