@@ -27,7 +27,6 @@ OLLAMA_DEBUG=4 ollama serve
 
 # 2. Install AI model (choose one)
 ollama pull gemma3  # Lightweight option
-# ollama pull mistral  # More powerful
 
 # 3. Clone repository
 git clone https://github.com/yourusername/summora.git
@@ -110,7 +109,7 @@ print(response.json()["summary"])
 | Component          | Technology                        |
 | ------------------ | --------------------------------- |
 | Backend            | Python + FastAPI                  |
-| AI Engine          | Ollama + Gemma-3B/Mistral         |
+| AI Engine          | Ollama + Gemma3                   |
 | Web Scraping       | BeautifulSoup4 + readability-lxml |
 | YouTube Processing | youtube-transcript-api            |
 | Frontend           | React + Tailwind CSS              |
